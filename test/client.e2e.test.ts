@@ -247,6 +247,19 @@ describe('GagaraBoostClient - Live Server Tests', () => {
       expect(refreshedMeta).toHaveProperty('file_size_bytes')
       expect(typeof refreshedMeta.row_count).toBe('number')
     }))
+
+    it('should list dataset columns', runIfServerReachable(async () => {
+      const columns = await client.listDatasetColumns(dataset.id)
+      expect(Array.isArray(columns)).toBe(true)
+      expect(columns.length).toBeGreaterThan(0)
+      expect(columns[0]).toHaveProperty('name')
+    }))
+
+    it('should download dataset', runIfServerReachable(async () => {
+      const data = await client.downloadDataset(dataset.id)
+      expect(data).toBeInstanceOf(ArrayBuffer)
+      expect(data.byteLength).toBeGreaterThan(0)
+    }))
   })
 
   describe('row sets', () => {
@@ -279,7 +292,7 @@ describe('GagaraBoostClient - Live Server Tests', () => {
       } catch { }
     }))
 
-    it('should create and list row sets', runIfServerReachable(async () => {
+    it('should create and manage row sets', runIfServerReachable(async () => {
       const rowSetData = {
         name: `test-rowset-${Date.now()}`,
         workspace_id: workspace.id,
@@ -291,9 +304,29 @@ describe('GagaraBoostClient - Live Server Tests', () => {
       expect(createdRowSet).toHaveProperty('id')
       expect(createdRowSet.name).toBe(rowSetData.name)
 
+      const fetchedRowSet = await client.getRowSet(createdRowSet.id)
+      expect(fetchedRowSet.id).toBe(createdRowSet.id)
+
+      const updatedName = `updated-rowset-${Date.now()}`
+      const updatedRowSet = await client.updateRowSet(createdRowSet.id, { name: updatedName })
+      expect(updatedRowSet.name).toBe(updatedName)
+
       const rowSets = await client.listRowSets(workspace.id)
       expect(rowSets).toHaveLength(1)
       expect(rowSets[0].id).toBe(createdRowSet.id)
+
+      const schema = await client.getRowSetSchema(createdRowSet.id)
+      expect(schema).toHaveProperty('columns')
+      expect(Array.isArray(schema.columns)).toBe(true)
+
+      const meta = await client.getRowSetMeta(createdRowSet.id)
+      expect(meta).toHaveProperty('row_count')
+
+      const sample = await client.getRowSetSample(createdRowSet.id)
+      expect(sample).toHaveProperty('columns')
+      expect(Array.isArray(sample.columns)).toBe(true)
+
+      await client.deleteRowSet(createdRowSet.id)
     }))
   })
 
@@ -327,7 +360,7 @@ describe('GagaraBoostClient - Live Server Tests', () => {
       } catch { }
     }))
 
-    it('should create and list column sets', runIfServerReachable(async () => {
+    it('should create and manage column sets', runIfServerReachable(async () => {
       const columnSetData = {
         dataset_id: dataset.id,
         name: `test-columnset-${Date.now()}`,
@@ -342,6 +375,22 @@ describe('GagaraBoostClient - Live Server Tests', () => {
       const columnSets = await client.listColumnSets({ datasetId: dataset.id })
       expect(columnSets).toHaveLength(1)
       expect(columnSets[0].id).toBe(createdColumnSet.id)
+
+      const fetchedColumnSet = await client.getColumnSet(createdColumnSet.id)
+      expect(fetchedColumnSet.id).toBe(createdColumnSet.id)
+
+      const updatedName = `updated-columnset-${Date.now()}`
+      const updatedColumnSet = await client.updateColumnSet(createdColumnSet.id, {
+        name: updatedName,
+      })
+      expect(updatedColumnSet.name).toBe(updatedName)
+
+      const clonedColumnSet = await client.cloneColumnSet(createdColumnSet.id)
+      expect(clonedColumnSet).toHaveProperty('id')
+      expect(clonedColumnSet.id).not.toBe(createdColumnSet.id)
+
+      await client.deleteColumnSet(clonedColumnSet.id)
+      await client.deleteColumnSet(createdColumnSet.id)
     }))
   })
 
@@ -450,6 +499,20 @@ describe('GagaraBoostClient - Training and Prediction Tests', () => {
     const createdParamSet = await client.createTrainingParamSet(paramSetData)
     expect(createdParamSet).toHaveProperty('id')
     expect(createdParamSet.name).toBe(paramSetData.name)
+
+    const fetchedParamSet = await client.getTrainingParamSet(createdParamSet.id)
+    expect(fetchedParamSet.id).toBe(createdParamSet.id)
+
+    const paramSets = await client.listTrainingParamSets(workspace.id)
+    expect(paramSets.length).toBeGreaterThan(0)
+
+    const updatedName = `updated-paramset-${Date.now()}`
+    const updatedParamSet = await client.updateTrainingParamSet(createdParamSet.id, {
+      name: updatedName,
+    })
+    expect(updatedParamSet.name).toBe(updatedName)
+
+    await client.deleteTrainingParamSet(createdParamSet.id)
   }))
 
   it('should train a model', runIfServerReachable(async () => {
@@ -477,6 +540,23 @@ describe('GagaraBoostClient - Training and Prediction Tests', () => {
     expect(trainResponse).toHaveProperty('status')
     expect(trainResponse).toHaveProperty('id')
     expect(trainResponse.status).toBe('success')
+
+    const models = await client.listModels({ workspaceId: workspace.id })
+    expect(Array.isArray(models)).toBe(true)
+
+    const model = await client.getModel(trainResponse.id)
+    expect(model.id).toBe(trainResponse.id)
+
+    const renamedModel = await client.renameModel(trainResponse.id, `renamed-model-${Date.now()}`)
+    expect(renamedModel.id).toBe(trainResponse.id)
+
+    const prediction = await client.predict(trainResponse.id, {
+      features: [{ value: 120 }],
+    })
+    expect(Array.isArray(prediction.predictions)).toBe(true)
+    expect(prediction.predictions.length).toBe(1)
+
+    await client.deleteModel(trainResponse.id)
 
     // Clean up the param set
     await client.deleteTrainingParamSet(paramSet.id)

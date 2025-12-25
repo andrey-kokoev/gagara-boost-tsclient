@@ -1,4 +1,4 @@
-export { GagaraBoostClient } from './client.js';
+export { GagaraBoostClient } from './client.js'
 
 export type {
   Workspace,
@@ -36,11 +36,13 @@ export type {
   PredictionWithFreeParameterRequest,
   PredictionWithFreeParameterResponse,
   FreeParameterPrediction,
+  QueryRequest,
+  QueryResponse,
   UploadFileInput,
   UploadDatasetOptions,
   ClientOptions,
   ErrorResponse,
   NumericValueStats,
-} from './types.js';
+} from './types.js'
 
-export { GagaraBoostError } from './types.js';
+export { GagaraBoostError } from './types.js'

@@ -43,12 +43,14 @@ export class GagaraBoostClient {
   readonly #fetch: typeof globalThis.fetch
   readonly #timeout: number
   #serviceToken?: string
+  #token?: string
 
   constructor(options: ClientOptions) {
     this.#baseUrl = options.baseUrl.replace(/\/$/, '')
     this.#fetch = options.fetch ?? globalThis.fetch.bind(globalThis)
     this.#timeout = options.timeout ?? 30_000
     this.#serviceToken = options.serviceToken
+    this.#token = options.token
   }
 
   get serviceToken (): string | undefined {
@@ -57,6 +59,14 @@ export class GagaraBoostClient {
 
   setServiceToken (token?: string): void {
     this.#serviceToken = token
+  }
+
+  get token (): string | undefined {
+    return this.#token
+  }
+
+  setToken (token?: string): void {
+    this.#token = token
   }
 
   // ----------------------------------------------------------
@@ -140,7 +150,8 @@ export class GagaraBoostClient {
     if (file instanceof Blob) {
       payload = file
     } else {
-      payload = new Blob([file], { type: contentType })
+      const bytes = new Uint8Array(file)
+      payload = new Blob([bytes], { type: contentType })
     }
 
     if (payload instanceof File) {
@@ -446,8 +457,9 @@ export class GagaraBoostClient {
 
     try {
       const headers = new Headers(init?.headers ?? {})
-      if (this.#serviceToken && !headers.has('Authorization')) {
-        headers.set('Authorization', `Bearer ${this.#serviceToken}`)
+      const token = this.#token ?? this.#serviceToken
+      if (token && !headers.has('Authorization')) {
+        headers.set('Authorization', `Bearer ${token}`)
       }
 
       const url = this.#buildUrl(path, params)

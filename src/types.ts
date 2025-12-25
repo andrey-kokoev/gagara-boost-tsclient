@@ -100,8 +100,9 @@ export interface DatasetColumnUpdate {
 export interface RowSet {
   id: string
   workspace_id: string
-  dataset_id: string
   name: string
+  base_dataset_id: string
+  predicate?: Record<string, unknown> | null
   created_at: string
 }
 
@@ -113,13 +114,6 @@ export interface QueryRequest {
 export interface QueryResponse {
   columns: string[]
   rows: Array<Record<string, any>>
-}
-id: string
-workspace_id: string
-name: string
-base_dataset_id: string
-predicate ?: Record<string, unknown> | null
-created_at: string
 }
 
 export interface RowSetCreate {
@@ -270,6 +264,9 @@ export interface ClientOptions {
 
   /** Service token for Authorization header */
   serviceToken?: string
+
+  /** User token for Authorization header */
+  token?: string
 
   /** Custom fetch implementation */
   fetch?: typeof globalThis.fetch
