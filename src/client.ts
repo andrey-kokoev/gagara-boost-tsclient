@@ -393,10 +393,14 @@ export class GagaraBoostClient {
   // ----------------------------------------------------------
 
   async train (request: TrainingRequest): Promise<TrainingResponse> {
-    return this.#requestJson('/train', {
+    const response = await this.#requestJson<TrainingResponse>('/train', {
       method: 'POST',
       body: JSON.stringify(request),
     })
+    if (response?.status === 'completed') {
+      return { ...response, status: 'success' }
+    }
+    return response
   }
 
   async calculateOptimalParamSet (
