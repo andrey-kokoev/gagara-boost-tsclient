@@ -40,6 +40,7 @@ export type {
   QueryResponse,
   UploadFileInput,
   UploadDatasetOptions,
+  ReplaceDatasetOptions,
   ClientOptions,
   ErrorResponse,
   NumericValueStats,

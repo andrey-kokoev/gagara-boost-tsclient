@@ -8,6 +8,7 @@ import type {
   UserCreateResponse,
   UploadFileInput,
   UploadDatasetOptions,
+  ReplaceDatasetOptions,
   DatasetMetaResponse,
   DatasetSchemaResponse,
   DatasetColumnCreate,
@@ -168,6 +169,35 @@ export class GagaraBoostClient {
     }
 
     return this.#requestJson('/datasets', { method: 'POST', body: form })
+  }
+
+  async replaceDataset (
+    id: string,
+    file: UploadFileInput,
+    options: ReplaceDatasetOptions = {}
+  ): Promise<DatasetItem> {
+    const form = new FormData()
+    const filename = options.filename ?? 'dataset.parquet'
+    const contentType = options.contentType ?? 'application/octet-stream'
+
+    let payload: Blob | File
+    if (file instanceof Blob) {
+      payload = file
+    } else {
+      const bytes = new Uint8Array(file)
+      payload = new Blob([bytes], { type: contentType })
+    }
+
+    if (payload instanceof File) {
+      form.append('file', payload)
+    } else {
+      form.append('file', payload, filename)
+    }
+
+    return this.#requestJson(`/datasets/${id}/replace`, {
+      method: 'POST',
+      body: form,
+    })
   }
 
   async downloadDataset (id: string): Promise<ArrayBuffer> {

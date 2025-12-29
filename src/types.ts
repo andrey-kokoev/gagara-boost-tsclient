@@ -58,6 +58,11 @@ export interface UploadResponse {
   created_at: string
 }
 
+export interface ReplaceDatasetOptions {
+  filename?: string
+  contentType?: string
+}
+
 export interface UserCreateResponse {
   id: string
   token: string
